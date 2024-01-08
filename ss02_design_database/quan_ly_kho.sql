@@ -10,19 +10,19 @@ sdt varchar(10)
 -- phieu nhap 
 create table phieu_nhap(
 so_pn int primary key auto_increment,
-ngay_nhap date unique
+ngay_nhap datetime
 );
 
 -- phieu xuat 
 create table phieu_xuat(
 so_px int primary key auto_increment,
-ngay_xuat date unique
+ngay_xuat datetime
 );
 
 -- nha cung cap 
 create table nha_cc(
 ma_ncc int primary key auto_increment,
-ten_ncc varchar(50) unique,
+ten_ncc varchar(50),
 dia_chi varchar(50),
 ma_sdt int,
 foreign key(ma_sdt) references so_dien_thoai(ma_sdt)
@@ -31,13 +31,13 @@ foreign key(ma_sdt) references so_dien_thoai(ma_sdt)
 -- vat tu 
 create table vat_tu(
 ma_vtu int primary key auto_increment,
-ten_vtu varchar(50) unique
+ten_vtu varchar(50)
 );
 
 -- don dat hang 
 create table don_hang(
 so_dh int primary key auto_increment,
-ngay_dat_hang date unique,
+ngay_dat_hang datetime,
 ma_ncc int,
 foreign key(ma_ncc) references nha_cc(ma_ncc)
 );
@@ -49,8 +49,8 @@ ma_vtu int,
 primary key(so_pn, ma_vtu),
 foreign key(so_pn) references phieu_nhap(so_pn),
 foreign key(ma_vtu) references vat_tu(ma_vtu),
-don_gia_nhap int unique,
-so_luong_nhap int unique
+don_gia_nhap int,
+so_luong_nhap int
 );
 
 -- Chi tiet phieu xuat
@@ -60,8 +60,8 @@ ma_vtu int,
 primary key(so_px, ma_vtu),
 foreign key(so_px) references phieu_xuat(so_px),
 foreign key(ma_vtu) references vat_tu(ma_vtu),
-don_gia_xuat int unique,
-so_luong_xuat int unique
+don_gia_xuat int,
+so_luong_xuat int
 );
 
 -- chi tiet don hang 
