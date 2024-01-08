@@ -5,14 +5,14 @@ use quan_ly_ban_hang;
 create table customer(
 c_id int primary key auto_increment,
 c_name varchar(50),
-c_age int unique
+c_age tinyint
 );
 
 -- Product Table
 create table product(
 p_id int primary key auto_increment,
 p_name varchar(50),
-p_price int unique
+p_price int
 );
 
 -- Order Table
@@ -21,8 +21,8 @@ o_id int,
 c_id int,
 primary key(o_id, c_id),
 foreign key(c_id) references customer(c_id),
-o_Date date unique,
-o_total_price int unique
+o_Date datetime,
+o_total_price int
 );
 
 -- Order Detail
