@@ -71,7 +71,7 @@ select * from class where StartDate like '%12%';
 
 -- Hiển thị tất cả các thông tin môn học có credit trong khoảng từ 3-5
 
-select * from subject where Credit in (3,4,5);
+select * from subject where Credit between 3 and 5;
 
 -- Thay đổi mã lớp(ClassID) của sinh viên có tên ‘Hung’ là 2
 
@@ -86,3 +86,23 @@ select * from student;
 select s.StudentName, sub.SubName, m.Mark
 from student s join Mark m on s.StudentId = m.StudentId join subject sub on m.SubId = sub.SubId
 order by Mark desc, StudentName asc; 
+
+-- Hiển thị tất cả các thông tin môn học (bảng subject) có credit lớn nhất
+
+select * from subject 
+where Credit = (select max(Credit) from subject);
+
+-- Hiển thị các thông tin môn học có điểm thi lớn nhất
+
+select * from subject s
+join mark m on s.SubId = m.SubId
+where m.Mark = (select max(Mark) from mark);
+
+
+-- Hiển thị các thông tin sinh viên và điểm trung bình của mỗi sinh viên, xếp hạng theo thứ tự điểm giảm dần
+
+select s.StudentName, avg(m.Mark) as AverageMark
+from student s
+join mark m on s.StudentId = m.StudentId
+group by s.StudentName
+order by AverageMark desc;
