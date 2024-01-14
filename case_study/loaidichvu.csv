@@ -1,4 +1,6 @@
-﻿ma_loai_dich_vu;ten_loai_dich_vu
-1;Villa
-2;House
-3;Room
+﻿;;;
+;;;
+ma_loai_dich_vu;ten_loai_dich_vu;;
+1;Villa;;
+2;House;;
+3;Room;;
