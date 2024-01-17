@@ -22,7 +22,7 @@ department_name varchar(45) unique
 
 -- Nhân viên
 create table employee (
-employee_id int auto_increment,
+employee_id int primary key auto_increment,
 employee_fullname varchar(45) not null,
 employee_birthday date not null, 
 employee_id_number varchar(45) not null unique,
@@ -33,7 +33,6 @@ employee_address varchar(45),
 position_id int,
 level_id int,
 department_id int,
-primary key (employee_id, position_id, level_id, department_id),
 foreign key (position_id) references position (position_id),
 foreign key (level_id) references level_employee (level_id),
 foreign key (department_id) references department (department_id)
@@ -47,7 +46,7 @@ class_cus_name varchar(45)
 
 -- Khách hàng
 create table customer (
-customer_id int auto_increment,
+customer_id int primary key auto_increment,
 class_cus_id int,
 customer_fullname varchar(45) not null,
 customer_birthday date not null,
@@ -56,7 +55,6 @@ customer_id_number varchar(45) not null unique,
 customer_phone_number varchar(45) not null unique,
 customer_email varchar(45) unique,
 customer_address varchar(45),
-primary key (customer_id,class_cus_id),
 foreign key (class_cus_id) references class_customer (class_cus_id)
 );
 
@@ -74,7 +72,7 @@ rental_name varchar(45)
 
 -- Dịch vụ
 create table service (
-service_id int auto_increment,
+service_id int primary key auto_increment,
 service_name varchar(45) not null,
 area int,
 rental_cost double not null,
@@ -86,7 +84,6 @@ other_convenient_describe varchar(45),
 pool_area double,
 floor_number int,
 free_service_inclued text,
-primary key (service_id,rental_id, service_type_id),
 foreign key (rental_id) references rental_type (rental_id),
 foreign key (service_type_id) references service_type (service_type_id)
 );
@@ -102,14 +99,13 @@ status_other_service varchar(45)
 
 -- Hợp đồng
 create table contract (
-contract_id int auto_increment,
+contract_id int primary key auto_increment,
 contract_date datetime not null,
 contract_end_date datetime not null,
 deposit_money double not null,
 employee_id int,
 customer_id int,
 service_id int,
-primary key (contract_id,employee_id, customer_id, service_id),
 foreign key (employee_id) references employee (employee_id),
 foreign key (customer_id) references customer (customer_id),
 foreign key (service_id) references service (service_id)
@@ -117,11 +113,10 @@ foreign key (service_id) references service (service_id)
 
 -- Hợp đồng chi tiết
 create table contract_detail (
-contract_detail_id int auto_increment,
+contract_detail_id int primary key auto_increment,
 contract_id int,
 other_service_id int,
 amount int not null,
-primary key (contract_detail_id, contract_id, other_service_id),
 foreign key (contract_id) references contract (contract_id),
 foreign key (other_service_id) references other_service (other_service_id)
 );
@@ -240,7 +235,9 @@ where clc.class_cus_name = 'Diamond'
 group by c.customer_id, c.customer_fullname
 order by count(ct.contract_id) asc;
 
--- 5. Hiển thị ma_khach_hang, ho_ten, ten_loai_khach, ma_hop_dong, ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng. (những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra). 
+-- 5. Hiển thị ma_khach_hang, ho_ten, ten_loai_khach, ma_hop_dong, ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, 
+-- tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, 
+-- với Số Lượng và Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng. (những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra). 
 
 select 
 c.customer_id as ma_khach_hang,
@@ -250,57 +247,146 @@ ct.contract_id as ma_hop_dong,
 sv.service_name as ten_dich_vu,
 ct.contract_date as ngay_lam_hop_dong,
 ct.contract_end_date as ngay_ket_thuc, 
-ifnull(sum(sv.rental_cost + (ctd.amount*osv.price)),0) as tong_tien
+ifnull(rental_cost + sum(ctd.amount*osv.price),0) as tong_tien
 from customer c
 left join class_customer clc on c.class_cus_id = clc.class_cus_id
 left join contract ct on c.customer_id = ct.customer_id
 left join service sv on ct.service_id = sv.service_id
 left join contract_detail ctd on ct.contract_id = ctd.contract_id
 left join other_service osv on ctd.other_service_id = osv.other_service_id
-group by ct.contract_id,c.customer_id,sv.service_id;
+group by c.customer_id, c.customer_fullname, clc.class_cus_name, ct.contract_id, sv.service_name, ct.contract_date, ct.contract_end_date;
 
 -- 6. Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
 
+select sv.service_id, sv.service_name, sv.area, sv.rental_cost, svt.service_type_name from service sv 
+join service_type svt on sv.service_type_id = svt.service_type_id
+where sv.service_id not in 
+(select sv.service_id from contract ct
+where ct.service_id = sv.service_id
+and year(ct.contract_date) = 2021
+and quarter(ct.contract_date) = 1)
+group by sv.service_id, sv.service_name, sv.area, sv.rental_cost, svt.service_type_name;	
 
+-- 7. Hiển thị thông tin ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, 
+-- ten_loai_dich_vu của tất cả các loại dịch vụ đã từng được khách hàng đặt phòng trong năm 2020 nhưng chưa từng được khách hàng đặt phòng trong năm 2021.
 
--- 7. Hiển thị thông tin ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ đã từng được khách hàng đặt phòng trong năm 2020 nhưng chưa từng được khách hàng đặt phòng trong năm 2021.
-
-
+select sv.service_id, sv.service_name, sv.area, sv.max_person, sv.rental_cost,svt.service_type_name from service sv
+join service_type svt on sv.service_type_id = svt.service_type_id
+where sv.service_id not in
+(select distinct ct.service_id from contract ct
+where year(ct.contract_date) = 2021)
+and sv.service_id in 
+(select distinct ct.service_id from contract ct
+where year(ct.contract_date) = 2020)
+group by sv.service_id, sv.service_name, sv.area, sv.max_person, sv.rental_cost,svt.service_type_name;
 
 -- 8. Hiển thị thông tin ho_ten khách hàng có trong hệ thống, với yêu cầu ho_ten không trùng nhau. Học viên sử dụng theo 3 cách khác nhau để thực hiện yêu cầu trên.
 
+select distinct customer_fullname as ho_ten from customer;
 
+select customer_fullname as ho_ten from customer
+group by ho_ten;
+
+select min(customer_fullname) as ho_ten from customer
+group by customer_fullname;
 
 -- 9. Thực hiện thống kê doanh thu theo tháng, nghĩa là tương ứng với mỗi tháng trong năm 2021 thì sẽ có bao nhiêu khách hàng thực hiện đặt phòng.
 
+select month(contract_date) as thang, count(distinct customer_id) as so_khach_hang_dat_phong
+from contract where year(contract_date) = 2021
+group by thang
+order by thang;
 
+-- 10. Hiển thị thông tin tương ứng với từng hợp đồng thì đã sử dụng bao nhiêu dịch vụ đi kèm. Kết quả hiển thị bao gồm ma_hop_dong, ngay_lam_hop_dong, ngay_ket_thuc, tien_dat_coc, 
+-- so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem).
 
--- 10. Hiển thị thông tin tương ứng với từng hợp đồng thì đã sử dụng bao nhiêu dịch vụ đi kèm. Kết quả hiển thị bao gồm ma_hop_dong, ngay_lam_hop_dong, ngay_ket_thuc, tien_dat_coc, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem).
-
-
+select co.contract_id, co.contract_date, co.contract_end_date, co.deposit_money, ifnull((sum(cd.amount)),0) as so_luong_dich_vu_di_kem
+from contract co
+left join contract_detail cd on co.contract_id = cd.contract_id
+group by co.contract_id, co.contract_date, co.contract_end_date, co.deposit_money;
 
 -- 11. Hiển thị thông tin các dịch vụ đi kèm đã được sử dụng bởi những khách hàng có ten_loai_khach là “Diamond” và có dia_chi ở “Vinh” hoặc “Quảng Ngãi”.
 
+select dvdk.other_service_id, dvdk.other_service_name from other_service dvdk 
+join contract_detail hdct on dvdk.other_service_id = hdct.other_service_id
+join contract hd on hdct.contract_id = hd.contract_id
+join customer kh on hd.customer_id = kh.customer_id
+join class_customer lk on kh.class_cus_id = lk.class_cus_id
+where lk.class_cus_name like 'Diamond'
+and (kh.customer_address like '%Vinh%' or kh.customer_address = '%Quảng Ngãi%')
+group by dvdk.other_service_id, dvdk.other_service_name;
 
+-- 12. Hiển thị thông tin ma_hop_dong, ho_ten (nhân viên), ho_ten (khách hàng), so_dien_thoai (khách hàng), ten_dich_vu, so_luong_dich_vu_di_kem 
+-- (được tính dựa trên việc sum so_luong ở dich_vu_di_kem), tien_dat_coc của tất cả các dịch vụ đã từng được khách hàng đặt vào 3 tháng cuối năm 2020 nhưng chưa từng được khách hàng đặt vào 6 tháng đầu năm 2021.
 
--- 12. Hiển thị thông tin ma_hop_dong, ho_ten (nhân viên), ho_ten (khách hàng), so_dien_thoai (khách hàng), ten_dich_vu, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem), tien_dat_coc của tất cả các dịch vụ đã từng được khách hàng đặt vào 3 tháng cuối năm 2020 nhưng chưa từng được khách hàng đặt vào 6 tháng đầu năm 2021.
-
-
+select 
+hd.contract_id,
+nv.employee_fullname,
+kh.customer_fullname,
+kh.customer_phone_number,
+dv.service_name,
+hd.deposit_money as tien_dat_coc,
+ifnull(sum(hdct.amount),0) as so_luong_dich_vu_di_kem
+from contract hd
+left join employee nv on hd.employee_id = nv.employee_id
+left join customer kh on hd.customer_id = kh.customer_id
+left join service dv on hd.service_id = dv.service_id
+left join contract_detail hdct on hd.contract_id = hdct.contract_id
+where dv.service_id not in 
+(select dv.service_id from service dv 
+join contract hd on dv.service_id = hd.service_id
+where year(hd.contract_date) = 2021 and (quarter(hd.contract_date) = 1 and quarter(hd.contract_date) = 2))
+and dv.service_id in 
+(select dv.service_id from service dv 
+join contract hd on dv.service_id = hd.service_id
+where year(hd.contract_date) = 2020 and (quarter(hd.contract_date) = 4))
+group by hd.contract_id;
 
 -- 13. Hiển thị thông tin các Dịch vụ đi kèm được sử dụng nhiều nhất bởi các Khách hàng đã đặt phòng. (Lưu ý là có thể có nhiều dịch vụ có số lần sử dụng nhiều như nhau).
 
+-- Tạo View để lấy thông tin bảng join 
+create view v_thong_tin as
+select dvdk.other_service_id, dvdk.other_service_name, 
+ifnull(sum(hdct.amount),0) as so_luong_dich_vu_di_kem
+from other_service dvdk
+join contract_detail hdct on dvdk.other_service_id = hdct.other_service_id
+group by dvdk.other_service_id;
 
+select * from v_thong_tin where so_luong_dich_vu_di_kem = (select max(so_luong_dich_vu_di_kem) from v_thong_tin);
 
--- 14. Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một lần duy nhất. Thông tin hiển thị bao gồm ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem, so_lan_su_dung (được tính dựa trên việc count các ma_dich_vu_di_kem).
+-- 14. Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một lần duy nhất. Thông tin hiển thị bao gồm ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem, 
+-- so_lan_su_dung (được tính dựa trên việc count các ma_dich_vu_di_kem).
 
+select hd.contract_id as ma_hop_dong,
+ldv.service_type_name as ten_loai_dich_vu,
+dvdk.other_service_name as ten_dich_vu_di_kem,
+count(hdct.other_service_id) as so_lan_su_dung
+from service_type ldv
+join service dv on ldv.service_type_id = dv.service_type_id
+join contract hd on dv.service_id = hd.service_id
+join contract_detail hdct on hd.contract_id = hdct.contract_id
+join other_service dvdk on hdct.other_service_id = dvdk.other_service_id
+group by ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem
+having so_lan_su_dung = 1;
 
+-- 15. Hiển thi thông tin của tất cả nhân viên bao gồm ma_nhan_vien, ho_ten, ten_trinh_do, ten_bo_phan, so_dien_thoai, 
+-- dia_chi mới chỉ lập được tối đa 3 hợp đồng từ năm 2020 đến 2021.
 
--- 15. Hiển thi thông tin của tất cả nhân viên bao gồm ma_nhan_vien, ho_ten, ten_trinh_do, ten_bo_phan, so_dien_thoai, dia_chi mới chỉ lập được tối đa 3 hợp đồng từ năm 2020 đến 2021.
-
-
+select nv.employee_id as ma_nhan_vien,
+nv.employee_fullname as ho_ten,
+td.level_name as ten_trinh_do,
+bp.department_name,
+nv.employee_phone_number as so_dien_thoai,
+nv.employee_address as dia_chi
+from level_employee td
+join employee nv on nv.level_id = td.level_id
+join department bp on nv.department_id = bp.department_id
+join contract hd on nv.employee_id = hd.employee_id
+where year(hd.contract_date) between 2020 and 2021
+group by ma_nhan_vien
+having count(hd.employee_id) <=3;
 
 -- 16. Xóa những Nhân viên chưa từng lập được hợp đồng nào từ năm 2019 đến năm 2021.
-
 
 
 
