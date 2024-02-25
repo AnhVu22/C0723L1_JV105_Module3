@@ -428,10 +428,6 @@ create view v_nhan_vien as
 select * from employee
 where employee_address like '%Đà Nẵng%';
 
-select * from v_nhan_vien nv
-join contract hd on nv.employee_id = hd.employee_id
-where hd.contract_date like '12/12/2019';
-
 -- 22. Thông qua khung nhìn v_nhan_vien thực hiện cập nhật địa chỉ thành “Liên Chiểu” đối với tất cả các nhân viên được nhìn thấy bởi khung nhìn này.
 
 
